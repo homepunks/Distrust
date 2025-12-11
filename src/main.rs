@@ -15,7 +15,7 @@ async fn main() -> io::Result<()> {
 		println!("[INFO] Accepted connection from: {addr}");
 		
 		tokio::spawn(async move {
-		    if let Err(e) = net::handle_client(stream).await {
+		    if let Err(e) = net::handle_client(stream, addr).await {
 			eprintln!("[ERROR] Could not handle client {addr}: {e}");
 		    }
 		});
@@ -23,6 +23,4 @@ async fn main() -> io::Result<()> {
 	    Err(e) => eprintln!("ERROR: Could not accept connection: {e}"),
 	}
     }
-    
-    // Ok(())
 }
