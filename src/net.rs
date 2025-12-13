@@ -11,7 +11,7 @@ pub async fn handle_client(mut stream: TcpStream, addr: SocketAddr, db: Arc<data
     let db = db.clone();
     let mut buf = [0u8; 1024];
     loop {
-	stream.write_all(b"Choose mode: GET | POST:\t").await?;
+	stream.write_all(b"Choose mode: GET | POST: ").await?;
 	let n = stream.read(&mut buf).await?;
 	if n == 0 {
 	    println!("[INFO] Client {addr} disconnected.");

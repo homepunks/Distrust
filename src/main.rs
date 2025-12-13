@@ -9,12 +9,6 @@ mod data;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    // let db_url = {
-    // 	let db_path = env::current_dir()?
-    // 	    .join("schema/resources.db");
-    // 	format!("sqlite:{}", db_path.display())
-    // };
-
     let db_path = env::current_dir()?
 	.join("data/resources.db");
     

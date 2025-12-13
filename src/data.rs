@@ -10,7 +10,6 @@ pub struct Resource {
 const POST: &str = "INSERT INTO resources (uid, content) VALUES (?, ?)";
 const GET: &str = "SELECT uid, content FROM resources WHERE uid = ?";
 const _DELETE: &str = "DELETE FROM resources WHERE uid = ?";
-const _EXISTS: &str = "SELECT EXISTS(SELECT 1 FROM resources WHERE uid = ?)";
 
 pub struct Database {
     pool: SqlitePool,
