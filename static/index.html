@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>distrust - paste service</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>distrust</h1>
+        <p class="info">Eternal paste service. Text: 1MB, Files: 10MB.</p>
+
+        <form action="/paste" method="post" enctype="multipart/form-data">
+            <input type="radio" name="mode" id="mode-text" value="text" checked hidden>
+            <input type="radio" name="mode" id="mode-file" value="file" hidden>
+
+            <div class="mode-toggle">
+                <label for="mode-text">Text</label>
+                <label for="mode-file">File</label>
+            </div>
+
+            <div class="text-input">
+                <textarea name="content" placeholder="Paste your text here..."></textarea>
+            </div>
+
+            <div class="file-input">
+                <input type="file" name="file" id="file">
+                <label for="file" class="file-label">Choose file or drag & drop</label>
+            </div>
+
+            <button type="submit">Create Paste</button>
+        </form>
+    </div>
+</body>
+</html>
