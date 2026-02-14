@@ -1,15 +1,36 @@
-use sqlx::{sqlite::SqlitePool, FromRow};
 use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
+use sqlx::{sqlite::SqlitePool, FromRow};
 
 #[derive(Debug, FromRow)]
-pub struct Resource {
-    pub uid:     String,
-    pub content: String,
+pub struct Paste {
+    pub id:     String,
+    pub content: Vec<u8>,
+    pub content_type: String,
+    pub size: i64,
+    pub created_at: i64,
+    pub view_count: i64,
 }
 
-const POST: &str = "INSERT INTO resources (uid, content) VALUES (?, ?)";
-const GET: &str = "SELECT uid, content FROM resources WHERE uid = ?";
-const _DELETE: &str = "DELETE FROM resources WHERE uid = ?";
+#[derive(Debug)]
+pub struct NewPaste {
+    pub content: Vec<u8>,
+    pub content_type: String,
+}
+
+const INSERT: &str = r#"
+    INSERT INTO pastes (id, content, content_type, size, created_at)
+    VALUES (?, ?, ?, ?, ?)
+"#;
+
+const SELECT: &str = r#"
+    SELECT id, content, content_type, size, created_at, view_count
+    FROM pastes WHERE id = ?
+"#;
+
+const INCREMENT_VIEWS: &str = r#"
+    UPDATE pastes SET view_count = view_count + 1 WHERE id = ?
+"#;
 
 pub struct Database {
     pool: SqlitePool,
@@ -18,6 +39,9 @@ pub struct Database {
 impl Database {
     pub async fn connect(db_path: &std::path::PathBuf) -> sqlx::Result<Self> {
 	if !db_path.exists() {
+            if let Some(parent) = db_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
 	    fs::File::create(db_path)?;
 	    println!("[INFO] Created file database at {}", db_path.display());
 	}
@@ -30,22 +54,40 @@ impl Database {
 
 	Ok(Database{ pool })
     }
+    
+    pub async fn create_paste(&self, id: &str, paste: NewPaste) -> sqlx::Result<()> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
 
-    pub async fn post_resource(&self, uid: &str, content: &str) -> sqlx::Result<()> {
-	sqlx::query(POST)
-	    .bind(uid).bind(content)
-	    .execute(&self.pool)
-	    .await?;
+        let size = paste.content.len() as i64;
 
-	Ok(())
+        sqlx::query(INSERT)
+            .bind(id)
+            .bind(&paste.content)
+            .bind(&paste.content_type)
+            .bind(size)
+            .bind(now)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 
-    pub async fn get_resource(&self, uid: &str) -> sqlx::Result<Option<Resource>> {
-	let resource = sqlx::query_as::<_, Resource>(GET)
-	    .bind(uid)
-	    .fetch_optional(&self.pool)
-	    .await?;
+    pub async fn get_paste(&self, id: &str) -> sqlx::Result<Option<Paste>> {
+        let paste = sqlx::query_as::<_, Paste>(SELECT)
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
 
-	Ok(resource)
+        if paste.is_some() {
+            let _ = sqlx::query(INCREMENT_VIEWS)
+                .bind(id)
+                .execute(&self.pool)
+                .await;
+        }
+
+        Ok(paste)
     }
 }
