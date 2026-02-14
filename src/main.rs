@@ -1,25 +1,25 @@
-use std::io;
-use std::env;
-use std::sync::Arc;
 use axum::{
+    Router,
     extract::DefaultBodyLimit,
     routing::{get, post},
-    Router,
 };
-use tokio::net::TcpListener;
 use distrust::{AppState, data::Database, routes};
+use std::env;
+use std::io;
+use std::sync::Arc;
+use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let db_path = env::current_dir()?.join("data/resources.db");
-    
+
     let db = Database::connect(&db_path)
         .await
-	.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
-    let state = AppState{ db: Arc::new(db) };
-    
+    let state = AppState { db: Arc::new(db) };
+
     let app = Router::new()
         .route("/", get(routes::serve_homepage))
         .route("/paste", post(routes::create_paste))

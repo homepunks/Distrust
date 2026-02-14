@@ -1,7 +1,7 @@
 use axum::{
+    extract::multipart::MultipartError,
     http::StatusCode,
     response::{IntoResponse, Response},
-    extract::multipart::MultipartError,
 };
 
 pub enum AppError {
@@ -28,7 +28,10 @@ impl IntoResponse for AppError {
         let (status, message) = match self {
             AppError::Database(e) => {
                 eprintln!("[ERROR] Database error: {}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_string(),
+                )
             }
             AppError::Multipart(e) => {
                 eprintln!("[ERROR] Multipart error: {}", e);

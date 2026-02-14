@@ -1,10 +1,10 @@
+use sqlx::{FromRow, sqlite::SqlitePool};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
-use sqlx::{sqlite::SqlitePool, FromRow};
 
 #[derive(Debug, FromRow)]
 pub struct Paste {
-    pub id:     String,
+    pub id: String,
     pub content: Vec<u8>,
     pub content_type: String,
     pub size: i64,
@@ -38,23 +38,23 @@ pub struct Database {
 
 impl Database {
     pub async fn connect(db_path: &std::path::PathBuf) -> sqlx::Result<Self> {
-	if !db_path.exists() {
+        if !db_path.exists() {
             if let Some(parent) = db_path.parent() {
                 fs::create_dir_all(parent)?;
             }
-	    fs::File::create(db_path)?;
-	    println!("[INFO] Created file database at {}", db_path.display());
-	}
+            fs::File::create(db_path)?;
+            println!("[INFO] Created file database at {}", db_path.display());
+        }
 
-	let db_url = format!("sqlite:{}", db_path.display());
-	let pool = SqlitePool::connect(&db_url).await?;
-	let init_sql = include_str!("../schema/init.sql");
-	
-	sqlx::query(init_sql).execute(&pool).await?;
+        let db_url = format!("sqlite:{}", db_path.display());
+        let pool = SqlitePool::connect(&db_url).await?;
+        let init_sql = include_str!("../schema/init.sql");
 
-	Ok(Database{ pool })
+        sqlx::query(init_sql).execute(&pool).await?;
+
+        Ok(Database { pool })
     }
-    
+
     pub async fn create_paste(&self, id: &str, paste: NewPaste) -> sqlx::Result<()> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)

@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use data::Database;
+use std::sync::Arc;
 
 pub mod data;
 pub mod errors;

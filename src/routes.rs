@@ -1,17 +1,17 @@
+use crate::{AppState, data, errors::AppError};
 use axum::{
     extract::{Multipart, Path, State},
-    response::{Html, IntoResponse, Response},
     http::header,
+    response::{Html, IntoResponse, Response},
 };
 use uuid::Uuid;
-use crate::{data, errors::AppError, AppState};
 
 pub async fn serve_homepage() -> Html<&'static str> {
     Html(include_str!("../static/index.html"))
 }
 
 pub async fn create_paste(
-    State(state): State<AppState>, 
+    State(state): State<AppState>,
     mut multipart: Multipart,
 ) -> Result<Response, AppError> {
     let mut content = Vec::new();
@@ -33,7 +33,7 @@ pub async fn create_paste(
                     content_type = mime_guess::from_path(&filename)
                         .first_or_octet_stream()
                         .to_string();
-                    
+
                     let data = field.bytes().await?;
                     content = data.to_vec();
                 }
@@ -47,7 +47,9 @@ pub async fn create_paste(
     }
 
     if content.len() > 10 * 1024 * 1024 {
-        return Err(AppError::BadRequest("Content too large (max 10MB)".to_string()));
+        return Err(AppError::BadRequest(
+            "Content too large (max 10MB)".to_string(),
+        ));
     }
 
     let id = Uuid::new_v4().to_string();
@@ -108,7 +110,7 @@ pub async fn get_paste(
             let html = if is_text {
                 let content_str = String::from_utf8_lossy(&paste.content);
                 format!(
-                r#"<!DOCTYPE html>
+                    r#"<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -124,13 +126,13 @@ pub async fn get_paste(
     </div>
 </body>
 </html>"#,
-                id,
-                id,
-                paste.content_type,
-                paste.view_count,
-                id,
-                html_escape(&content_str)
-            ) 
+                    id,
+                    id,
+                    paste.content_type,
+                    paste.view_count,
+                    id,
+                    html_escape(&content_str)
+                )
             } else {
                 format!(
                     r#"<!DOCTYPE html>
@@ -152,13 +154,7 @@ pub async fn get_paste(
     </div>
 </body>
 </html>"#,
-                    id,
-                    id,
-                    paste.content_type,
-                    paste.view_count,
-                    id,
-                    paste.content_type,
-                    id
+                    id, id, paste.content_type, paste.view_count, id, paste.content_type, id
                 )
             };
             Ok(Html(html).into_response())
@@ -174,10 +170,8 @@ pub async fn get_paste_raw(
     match state.db.get_paste(&id).await? {
         Some(paste) => {
             let mut resp = paste.content.into_response();
-            resp.headers_mut().insert(
-                header::CONTENT_TYPE,
-                paste.content_type.parse().unwrap(),
-            );
+            resp.headers_mut()
+                .insert(header::CONTENT_TYPE, paste.content_type.parse().unwrap());
 
             Ok(resp)
         }
