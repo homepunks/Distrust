@@ -1,39 +1,39 @@
 use std::io;
 use std::env;
 use std::sync::Arc;
+use axum::{
+    extract::DefaultBodyLimit,
+    routing::{get, post},
+    Router,
+};
 use tokio::net::TcpListener;
-use crate::data::Database;
-
-mod net;
-mod data;
+use distrust::{AppState, data::Database, routes};
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let db_path = env::current_dir()?
-	.join("data/resources.db");
+    let db_path = env::current_dir()?.join("data/resources.db");
     
     let db = Database::connect(&db_path)
-	.await
+        .await
 	.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-    let db = Arc::new(db);
+
+    let state = AppState{ db: Arc::new(db) };
     
+    let app = Router::new()
+        .route("/", get(routes::serve_homepage))
+        .route("/paste", post(routes::create_paste))
+        .route("/paste/{id}", get(routes::get_paste))
+        .route("/raw/{id}", get(routes::get_paste_raw))
+        .nest_service("/static", ServeDir::new("static"))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
+        .with_state(state);
+
     let host = "0.0.0.0:6969";
     let listener = TcpListener::bind(host).await?;
-    println!("[INFO] Server started and listening on {host}");
+    println!("[INFO] Server listening on http://{}", host);
 
-    loop {
-	match listener.accept().await {
-	    Ok((stream, addr)) => {
-		println!("[INFO] Accepted connection from: {addr}");
-		let db = db.clone();
-		
-		tokio::spawn(async move {
-		    if let Err(e) = net::handle_client(stream, addr, db).await {
-			eprintln!("[ERROR] Could not handle client {addr}: {e}");
-		    }
-		});
-	    }
-	    Err(e) => eprintln!("ERROR: Could not accept connection: {e}"),
-	}
-    }
+    axum::serve(listener, app)
+        .await
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
 }
