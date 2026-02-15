@@ -169,9 +169,29 @@ pub async fn get_paste_raw(
 ) -> Result<Response, AppError> {
     match state.db.get_paste(&id).await? {
         Some(paste) => {
+            let is_text = paste.content_type.starts_with("text/")
+                || paste.content_type == "application/json"
+                || paste.content_type == "application/xml"
+                || paste.content_type == "application/javascript"
+                || paste.content_type == "application/ecmascript"
+                || paste.content_type == "application/x-sh"
+                || paste.content_type == "application/x-www-form-urlencoded"
+                || paste.content_type.contains("script")
+                || paste.content_type.contains("json")
+                || paste.content_type.contains("xml")
+                || paste.content_type.contains("yaml")
+                || paste.content_type.contains("toml")
+                || paste.content_type.contains("csv");
+
+            let content_type_header =  if is_text {
+                format!("{}; charset=utf-8", paste.content_type)
+            } else {
+                paste.content_type.clone()
+            };
+
             let mut resp = paste.content.into_response();
             resp.headers_mut()
-                .insert(header::CONTENT_TYPE, paste.content_type.parse().unwrap());
+                .insert(header::CONTENT_TYPE, content_type_header.parse().unwrap());
 
             Ok(resp)
         }
