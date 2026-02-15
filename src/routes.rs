@@ -183,7 +183,7 @@ pub async fn get_paste_raw(
                 || paste.content_type.contains("toml")
                 || paste.content_type.contains("csv");
 
-            let content_type_header =  if is_text {
+            let content_type_header = if is_text {
                 format!("{}; charset=utf-8", paste.content_type)
             } else {
                 paste.content_type.clone()
