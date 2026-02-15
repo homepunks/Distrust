@@ -16,7 +16,9 @@ async fn main() -> io::Result<()> {
 
     let db = Database::connect(&db_path)
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        // .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| io::Error::other(e.to_string()))?;
+
 
     let state = AppState { db: Arc::new(db) };
 
@@ -35,5 +37,5 @@ async fn main() -> io::Result<()> {
 
     axum::serve(listener, app)
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        .map_err(io::Error::other)
 }
