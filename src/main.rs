@@ -8,7 +8,6 @@ use std::env;
 use std::io;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -23,10 +22,10 @@ async fn main() -> io::Result<()> {
 
     let app = Router::new()
         .route("/", get(routes::serve_homepage))
+        .route("/static/style.css", get(routes::serve_css))
         .route("/paste", post(routes::create_paste))
         .route("/paste/{id}", get(routes::get_paste))
         .route("/raw/{id}", get(routes::get_paste_raw))
-        .nest_service("/static", ServeDir::new("static"))
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .with_state(state);
 

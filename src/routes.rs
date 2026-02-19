@@ -199,6 +199,11 @@ pub async fn get_paste_raw(
     }
 }
 
+pub async fn serve_css() -> impl IntoResponse {
+    let css = include_str!("../static/style.css");
+    ([(header::CONTENT_TYPE, "text/css")], css)
+}
+
 fn html_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
