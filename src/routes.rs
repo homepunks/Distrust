@@ -1,10 +1,11 @@
-use crate::{AppState, data, errors::AppError};
+use crate::{AppState, errors::AppError, MAX_SIZE};
 use axum::{
     extract::{Multipart, Path, State},
     http::header,
     response::{Html, IntoResponse, Response},
 };
 use uuid::Uuid;
+use tokio::fs;
 
 pub async fn serve_homepage() -> Html<&'static str> {
     Html(include_str!("../static/index.html"))
@@ -46,20 +47,21 @@ pub async fn create_paste(
         return Err(AppError::BadRequest("Content cannot be empty".to_string()));
     }
 
-    if content.len() > 10 * 1024 * 1024 {
+    if content.len() > MAX_SIZE {
         return Err(AppError::BadRequest(
             "Content too large (max 10MB)".to_string(),
         ));
     }
 
     let id = Uuid::new_v4().to_string();
+    let size = content.len() as i64;
 
-    let new_paste = data::NewPaste {
-        content,
-        content_type,
-    };
+    let content_path = format!("cache/{}", id);
+    fs::write(&content_path, &content)
+        .await
+        .map_err(|e| AppError::BadRequest(format!("Failed to save file: {}", e)))?;
 
-    state.db.create_paste(&id, new_paste).await?;
+    state.db.create_paste(&id, &content_type, size).await?;
 
     let success_html = format!(
         r#"<!DOCTYPE html>
@@ -93,6 +95,11 @@ pub async fn get_paste(
 ) -> Result<Response, AppError> {
     match state.db.get_paste(&id).await? {
         Some(paste) => {
+            let content_path = format!("cache/{}", id);
+            let content = fs::read(&content_path)
+                .await
+                .map_err(|_| AppError::NotFound)?;
+
             let is_text = paste.content_type.starts_with("text/")
                 || paste.content_type == "application/json"
                 || paste.content_type == "application/xml"
@@ -108,7 +115,7 @@ pub async fn get_paste(
                 || paste.content_type.contains("csv");
 
             let html = if is_text {
-                let content_str = String::from_utf8_lossy(&paste.content);
+                let content_str = String::from_utf8_lossy(&content);
                 format!(
                     r#"<!DOCTYPE html>
 <html>
@@ -169,6 +176,10 @@ pub async fn get_paste_raw(
 ) -> Result<Response, AppError> {
     match state.db.get_paste(&id).await? {
         Some(paste) => {
+            let content_path = format!("cache/{}", id);
+            let content = fs::read(&content_path)
+                .await
+                .map_err(|_| AppError::NotFound)?;
             let is_text = paste.content_type.starts_with("text/")
                 || paste.content_type == "application/json"
                 || paste.content_type == "application/xml"
@@ -189,7 +200,7 @@ pub async fn get_paste_raw(
                 paste.content_type.clone()
             };
 
-            let mut resp = paste.content.into_response();
+            let mut resp = content.into_response();
             resp.headers_mut()
                 .insert(header::CONTENT_TYPE, content_type_header.parse().unwrap());
 
