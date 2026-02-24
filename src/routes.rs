@@ -1,11 +1,11 @@
-use crate::{AppState, errors::AppError, MAX_SIZE};
+use crate::{AppState, MAX_SIZE, errors::AppError};
 use axum::{
     extract::{Multipart, Path, State},
     http::header,
     response::{Html, IntoResponse, Response},
 };
-use uuid::Uuid;
 use tokio::fs;
+use uuid::Uuid;
 
 pub async fn serve_homepage() -> Html<&'static str> {
     Html(include_str!("../static/index.html"))

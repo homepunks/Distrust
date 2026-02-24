@@ -3,7 +3,7 @@ use axum::{
     extract::DefaultBodyLimit,
     routing::{get, post},
 };
-use distrust::{AppState, data::Database, routes, MAX_SIZE};
+use distrust::{AppState, MAX_SIZE, data::Database, routes};
 use std::env;
 use std::io;
 use std::sync::Arc;

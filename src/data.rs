@@ -1,7 +1,7 @@
 use sqlx::{FromRow, sqlite::SqlitePool};
-use std::{fs, env};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, fs};
 
 #[derive(Debug, FromRow)]
 pub struct Paste {
