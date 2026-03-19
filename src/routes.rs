@@ -56,7 +56,7 @@ pub async fn create_paste(
     let id = Uuid::new_v4().to_string();
     let size = content.len() as i64;
 
-    let content_path = format!("cache/{}", id);
+    let content_path = state.cache_dir.join(&id);
     fs::write(&content_path, &content)
         .await
         .map_err(|e| AppError::BadRequest(format!("Failed to save file: {}", e)))?;
@@ -95,7 +95,7 @@ pub async fn get_paste(
 ) -> Result<Response, AppError> {
     match state.db.get_paste(&id).await? {
         Some(paste) => {
-            let content_path = format!("cache/{}", id);
+            let content_path = state.cache_dir.join(&id);
             let content = fs::read(&content_path)
                 .await
                 .map_err(|_| AppError::NotFound)?;
@@ -165,7 +165,7 @@ pub async fn get_paste_raw(
 ) -> Result<Response, AppError> {
     match state.db.get_paste(&id).await? {
         Some(paste) => {
-            let content_path = format!("cache/{}", id);
+            let content_path = state.cache_dir.join(&id);
             let content = fs::read(&content_path)
                 .await
                 .map_err(|_| AppError::NotFound)?;

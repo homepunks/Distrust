@@ -1,7 +1,6 @@
 use sqlx::{FromRow, sqlite::SqlitePool};
-use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs};
+use tokio::fs;
 
 #[derive(Debug, FromRow)]
 pub struct Paste {
@@ -34,17 +33,10 @@ impl Database {
     pub async fn connect(db_path: &std::path::PathBuf) -> sqlx::Result<Self> {
         if !db_path.exists() {
             if let Some(parent) = db_path.parent() {
-                fs::create_dir_all(parent)?;
+                fs::create_dir_all(parent).await?;
             }
-            fs::File::create(db_path)?;
+            fs::File::create(db_path).await?;
             println!("[INFO] Created file database at {}", db_path.display());
-        }
-
-        let cache_dir_path = env::current_dir()?.join("cache");
-        let cache = Path::new(&cache_dir_path);
-        if !cache.is_dir() {
-            fs::create_dir(cache)?;
-            println!("[INFO] Created cache directory at {}", cache.display());
         }
 
         let db_url = format!("sqlite:{}", db_path.display());
