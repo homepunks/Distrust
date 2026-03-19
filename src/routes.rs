@@ -100,20 +100,7 @@ pub async fn get_paste(
                 .await
                 .map_err(|_| AppError::NotFound)?;
 
-            let is_text = paste.content_type.starts_with("text/")
-                || paste.content_type == "application/json"
-                || paste.content_type == "application/xml"
-                || paste.content_type == "application/javascript"
-                || paste.content_type == "application/ecmascript"
-                || paste.content_type == "application/x-sh"
-                || paste.content_type == "application/x-www-form-urlencoded"
-                || paste.content_type.contains("script")
-                || paste.content_type.contains("json")
-                || paste.content_type.contains("xml")
-                || paste.content_type.contains("yaml")
-                || paste.content_type.contains("toml")
-                || paste.content_type.contains("csv");
-
+            let is_text = is_text_content(&paste.content_type);
             let html = if is_text {
                 let content_str = String::from_utf8_lossy(&content);
                 format!(
@@ -180,20 +167,8 @@ pub async fn get_paste_raw(
             let content = fs::read(&content_path)
                 .await
                 .map_err(|_| AppError::NotFound)?;
-            let is_text = paste.content_type.starts_with("text/")
-                || paste.content_type == "application/json"
-                || paste.content_type == "application/xml"
-                || paste.content_type == "application/javascript"
-                || paste.content_type == "application/ecmascript"
-                || paste.content_type == "application/x-sh"
-                || paste.content_type == "application/x-www-form-urlencoded"
-                || paste.content_type.contains("script")
-                || paste.content_type.contains("json")
-                || paste.content_type.contains("xml")
-                || paste.content_type.contains("yaml")
-                || paste.content_type.contains("toml")
-                || paste.content_type.contains("csv");
 
+            let is_text = is_text_content(&paste.content_type);
             let content_type_header = if is_text {
                 format!("{}; charset=utf-8", paste.content_type)
             } else {
@@ -220,4 +195,14 @@ fn html_escape(s: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+}
+
+fn is_text_content(content_type: &str) -> bool {
+    content_type.starts_with("text/")
+        || ["application/json", "application/xml", "application/javascript",
+            "application/ecmascript", "application/x-sh", "application/x-www-form-urlencoded"]
+            .contains(&content_type)
+        || ["script", "json", "xml", "yaml", "toml", "csv"]
+            .iter()
+            .any(|s| content_type.contains(s))
 }
