@@ -74,18 +74,17 @@ impl Database {
     }
 
     pub async fn get_paste(&self, id: &str) -> sqlx::Result<Option<Paste>> {
-        let paste = sqlx::query_as::<_, Paste>(SELECT)
+        sqlx::query_as::<_, Paste>(SELECT)
             .bind(id)
             .fetch_optional(&self.pool)
-            .await?;
+            .await
+    }
 
-        if paste.is_some() {
-            let _ = sqlx::query(INCREMENT_VIEWS)
+    pub async fn increment_views(&self, id: &str) -> sqlx::Result<()> {
+        sqlx::query(INCREMENT_VIEWS)
                 .bind(id)
                 .execute(&self.pool)
-                .await;
-        }
-
-        Ok(paste)
+                .await?;
+        Ok(())
     }
 }

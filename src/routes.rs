@@ -100,6 +100,8 @@ pub async fn get_paste(
                 .await
                 .map_err(|_| AppError::NotFound)?;
 
+            state.db.increment_views(&id).await?;
+
             let is_text = is_text_content(&paste.content_type);
             let html = if is_text {
                 let content_str = String::from_utf8_lossy(&content);
@@ -167,6 +169,8 @@ pub async fn get_paste_raw(
             let content = fs::read(&content_path)
                 .await
                 .map_err(|_| AppError::NotFound)?;
+
+            state.db.increment_views(&id).await?;
 
             let is_text = is_text_content(&paste.content_type);
             let content_type_header = if is_text {
