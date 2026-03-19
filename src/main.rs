@@ -4,9 +4,9 @@ use axum::{
     routing::{get, post},
 };
 use distrust::{AppState, MAX_SIZE, data::Database, routes};
+use std::sync::Arc;
 use std::{env, io};
 use tokio::fs;
-use std::sync::Arc;
 use tokio::{io::Result, net::TcpListener};
 
 #[tokio::main]

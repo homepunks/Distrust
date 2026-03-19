@@ -74,9 +74,9 @@ impl Database {
 
     pub async fn increment_views(&self, id: &str) -> sqlx::Result<()> {
         sqlx::query(INCREMENT_VIEWS)
-                .bind(id)
-                .execute(&self.pool)
-                .await?;
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

@@ -203,9 +203,15 @@ fn html_escape(s: &str) -> String {
 
 fn is_text_content(content_type: &str) -> bool {
     content_type.starts_with("text/")
-        || ["application/json", "application/xml", "application/javascript",
-            "application/ecmascript", "application/x-sh", "application/x-www-form-urlencoded"]
-            .contains(&content_type)
+        || [
+            "application/json",
+            "application/xml",
+            "application/javascript",
+            "application/ecmascript",
+            "application/x-sh",
+            "application/x-www-form-urlencoded",
+        ]
+        .contains(&content_type)
         || ["script", "json", "xml", "yaml", "toml", "csv"]
             .iter()
             .any(|s| content_type.contains(s))
