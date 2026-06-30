@@ -12,7 +12,7 @@ use tokio::{io::Result, net::TcpListener};
 #[tokio::main]
 async fn main() -> Result<()> {
     let db_path = env::current_dir()?.join("data/resources.db");
-    let cache_dir = env::current_dir()?.join("cache");
+    let cache_dir = env::current_dir()?.join("data/cache");
     if !cache_dir.exists() {
         fs::create_dir_all(&cache_dir).await?;
         println!("[INFO] Created cache directory at {}", cache_dir.display());
