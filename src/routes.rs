@@ -1,7 +1,7 @@
 use crate::{AppState, MAX_SIZE, errors::AppError};
 use axum::{
     extract::{Multipart, Path, State},
-    http::header,
+    http::{HeaderValue, header},
     response::{Html, IntoResponse, Response},
 };
 use tokio::fs;
@@ -173,15 +173,31 @@ pub async fn get_paste_raw(
             state.db.increment_views(&id).await?;
 
             let is_text = is_text_content(&paste.content_type);
-            let content_type_header = if is_text {
-                format!("{}; charset=utf-8", paste.content_type)
-            } else {
-                paste.content_type.clone()
-            };
 
             let mut resp = content.into_response();
-            resp.headers_mut()
-                .insert(header::CONTENT_TYPE, content_type_header.parse().unwrap());
+            let headers = resp.headers_mut();
+
+            if is_text {
+                headers.insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("text/plain; charset=utf-8"),
+                );
+            } else {
+                headers.insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_str(&paste.content_type)
+                        .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
+                );
+                headers.insert(
+                    header::CONTENT_DISPOSITION,
+                    HeaderValue::from_static("attachment"),
+                );
+            }
+
+            headers.insert(
+                header::X_CONTENT_TYPE_OPTIONS,
+                HeaderValue::from_static("nosniff"),
+            );
 
             Ok(resp)
         }
