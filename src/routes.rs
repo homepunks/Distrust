@@ -1,4 +1,4 @@
-use crate::{AppState, MAX_SIZE, errors::AppError};
+use crate::{AppState, MAX_SIZE, MAX_TEXT_SIZE, errors::AppError};
 use axum::{
     extract::{Multipart, Path, State},
     http::{HeaderValue, header},
@@ -25,6 +25,11 @@ pub async fn create_paste(
             "content" => {
                 let text = field.text().await?;
                 if !text.is_empty() {
+                    if text.len() > MAX_TEXT_SIZE {
+                        return Err(AppError::BadRequest(
+                            "Text too large (max 1MB)".to_string(),
+                        ));
+                    }
                     content = text.into_bytes();
                 }
             }

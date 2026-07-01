@@ -6,6 +6,7 @@ pub mod errors;
 pub mod routes;
 
 pub const MAX_SIZE: usize = 1024 * 1024 * 10;
+pub const MAX_TEXT_SIZE: usize = 1024 * 1024;
 
 #[derive(Clone)]
 pub struct AppState {
