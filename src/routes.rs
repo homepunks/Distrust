@@ -4,7 +4,7 @@ use axum::{
     http::{HeaderValue, header},
     response::{Html, IntoResponse, Response},
 };
-use tokio::{io, fs};
+use tokio::{fs, io};
 use uuid::Uuid;
 
 pub async fn serve_homepage() -> Html<&'static str> {
@@ -26,9 +26,7 @@ pub async fn create_paste(
                 let text = field.text().await?;
                 if !text.is_empty() {
                     if text.len() > MAX_TEXT_SIZE {
-                        return Err(AppError::BadRequest(
-                            "Text too large (max 1MB)".to_string(),
-                        ));
+                        return Err(AppError::BadRequest("Text too large (max 1MB)".to_string()));
                     }
                     content = text.into_bytes();
                 }
