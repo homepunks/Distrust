@@ -4,7 +4,7 @@ use axum::{
     http::{HeaderValue, header},
     response::{Html, IntoResponse, Response},
 };
-use tokio::fs;
+use tokio::{io, fs};
 use uuid::Uuid;
 
 pub async fn serve_homepage() -> Html<&'static str> {
@@ -61,7 +61,10 @@ pub async fn create_paste(
         .await
         .map_err(|e| AppError::BadRequest(format!("Failed to save file: {}", e)))?;
 
-    state.db.create_paste(&id, &content_type, size).await?;
+    if let Err(e) = state.db.create_paste(&id, &content_type, size).await {
+        let _ = fs::remove_file(&content_path).await;
+        return Err(e.into());
+    }
 
     let success_html = format!(
         r#"<!DOCTYPE html>
@@ -96,9 +99,14 @@ pub async fn get_paste(
     match state.db.get_paste(&id).await? {
         Some(paste) => {
             let content_path = state.cache_dir.join(&id);
-            let content = fs::read(&content_path)
-                .await
-                .map_err(|_| AppError::NotFound)?;
+            let content = match fs::read(&content_path).await {
+                Ok(content) => content,
+                Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                    let _ = state.db.delete_paste(&id).await;
+                    return Err(AppError::NotFound);
+                }
+                Err(_) => return Err(AppError::NotFound),
+            };
 
             state.db.increment_views(&id).await?;
 
@@ -166,9 +174,14 @@ pub async fn get_paste_raw(
     match state.db.get_paste(&id).await? {
         Some(paste) => {
             let content_path = state.cache_dir.join(&id);
-            let content = fs::read(&content_path)
-                .await
-                .map_err(|_| AppError::NotFound)?;
+            let content = match fs::read(&content_path).await {
+                Ok(content) => content,
+                Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                    let _ = state.db.delete_paste(&id).await;
+                    return Err(AppError::NotFound);
+                }
+                Err(_) => return Err(AppError::NotFound),
+            };
 
             state.db.increment_views(&id).await?;
 

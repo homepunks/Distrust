@@ -25,6 +25,10 @@ const INCREMENT_VIEWS: &str = r#"
     UPDATE pastes SET view_count = view_count + 1 WHERE id = ?
 "#;
 
+const DELETE: &str = r#"
+    DELETE FROM pastes WHERE id = ?
+"#;
+
 pub struct Database {
     pool: SqlitePool,
 }
@@ -77,6 +81,11 @@ impl Database {
             .bind(id)
             .execute(&self.pool)
             .await?;
+        Ok(())
+    }
+
+    pub async fn delete_paste(&self, id: &str) -> sqlx::Result<()> {
+        sqlx::query(DELETE).bind(id).execute(&self.pool).await?;
         Ok(())
     }
 }
